@@ -88,7 +88,7 @@ base_url = "https://www.mobiledokan.co/category/mobiles/smartphones/page/{}/"
 all_data = []
 
 # Iterate over multiple pages
-for page_num in range(9,11): 
+for page_num in range(6,11): 
     print(f"Scraping data from page {page_num}")
     url = base_url.format(page_num)
 
