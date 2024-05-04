@@ -14,6 +14,7 @@ brave_path = '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
 options = Options()
 options.binary_location = brave_path
 
+
 # Initialize the Chrome WebDriver with specified options
 driver = webdriver.Chrome(options=options)
 
@@ -48,9 +49,14 @@ def scrape_data():
             print("Elements not found on redirected page")
             continue
 
-        # Scrape the desired elements from the redirected page
-        brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[2]/a/span').text
-        price = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[1]/span').text
+        # Scrape the desired elements from the redirected page //*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[1]/span/text()
+        #//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[4]/a/span
+        try:
+            brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[2]/a/span').text
+        except:
+            brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[4]/a/span').text
+        price_element = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[1]/span')
+        price = price_element.text if price_element.text else price_element.get_attribute("innerText")
         released = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[1]/strong').text
         os = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[2]/strong').text
         display = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[3]/strong').text
@@ -79,21 +85,18 @@ def scrape_data():
 all_data = []
 
 # Iterate over multiple pages
-for page_num in range(1, ): 
+for page_num in range(1, 3): 
     print(f"Scraping data from page {page_num}")
 
     # Scrape data from the current page and append it to the list
     all_data.extend(scrape_data())
+    df = pd.DataFrame(all_data)
+    df.to_excel('mobile_data.xlsx', index=False)
 
     # Click on the next page button
     next_page_button = driver.find_element(By.XPATH, f'//*[@id="main-content-row"]/div/div/div[1]/div[4]/a[{page_num}]')
     next_page_button.click()
 
-# Create a DataFrame from the list of dictionaries
-df = pd.DataFrame(all_data)
-
-# Save the DataFrame to an Excel file
-df.to_excel('mobile_data.xlsx', index=False)
 
 # Close the WebDriver
 driver.quit()
