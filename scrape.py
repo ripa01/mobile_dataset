@@ -1,82 +1,99 @@
+import pandas as pd
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
-import os
 
+options = Options()
 
-def arogga_scrape(query):
-    options = Options()
-    
-    options.headless = False
-    options.binary_location = os.environ['BROWSER']
-    driver = webdriver.Chrome(options=options)
-    # Cache browser data for faster scraping
-    datadir = os.environ['HOME'] + "/mts/Arogga"
-    options.add_argument(f"user-data-dir={datadir}")
+# Set the Brave browser executable path
+brave_path = '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
+options = Options()
+options.binary_location = brave_path
 
-    # Send a request to the search page 
-    driver.get(f"https://www.mobiledokan.co/category/mobiles/smartphones/")
+# Initialize the Chrome WebDriver with specified options
+driver = webdriver.Chrome(options=options)
 
-    # element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="main-content"]/div[1]/div/div[2]/div[2]/div[1]')))
-    # element.click()
+# Send a request to the search page 
+driver.get("https://www.mobiledokan.co/category/mobiles/smartphones/")
 
-    try:
-        # Wait for the page to load 
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/ul')))
-    except TimeoutException:
-        # If no search results found, handle the case here
-        driver.quit()
-        return []
-    # Now, you can collect all the search results 
-    result_elements = driver.find_elements(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/ul/li')
-    
-    total_items = len(result_elements)
-    print(total_items)
-    
-    #  Create a list to store search results
-    results = []
-
-    # # logo =  './static/boibazar.png'
-    for item_id in range(1, total_items ,2):
-        try:
-            title = driver.find_element(By.XPATH, f'//*[@id="main-content"]/div[1]/div/div[2]/div[3]/div[2]/div/div/div/div[{item_id}]/div[1]/div[2]/div[1]')
-            author = driver.find_element(By.XPATH, f'//*[@id="main-content"]/div[1]/div/div[2]/div[3]/div[2]/div/div/div/div[{item_id}]/div[1]/div[2]/div[2]')
-            price = driver.find_element(By.XPATH, f'//*[@id="main-content"]/div[1]/div/div[2]/div[3]/div[2]/div/div/div/div[{item_id}]/div[1]/div[2]/div[3]/span[1]')
-            image = driver.find_element(By.XPATH, f'//*[@id="main-content"]/div[1]/div/div[2]/div[3]/div[2]/div/div/div/div[{item_id}]/div[1]/div[1]/a/img').get_attribute('src')
-            link = driver.find_element(By.XPATH, f'//*[@id="main-content"]/div[1]/div/div[2]/div[3]/div[2]/div/div/div/div[{item_id}]/div[1]/div[2]/div[1]/a').get_attribute('href')
-
-            results.append({
-                "title": title.text,
-                "author": author.text,
-                "price": price.text,
-                "image": image,
-                "link": link,
-                # 'logo': logo,
-            })
-
-        except Exception as e:
-            print(f"Error while processing item {item_id}: {str(e)}")
-
-    # After scraping, close the browser window
+try:
+    # Wait for the page to load 
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/ul')))
+except TimeoutException:
+    # If no search results found, handle the case here
     driver.quit()
+       
+def scrape_data():
+    result_elements = driver.find_elements(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/ul/li')
+    total_li = len(result_elements)
+    print(total_li)
+    data = []
 
- 
-    return results
+    for i in range(1, total_li+1):
+        print(f"Clicking on <li> element number {i}")
 
-# Call the function with your desired query
-query = "Ecosprin 75"
-results = arogga_scrape(query)
+        li_element = driver.find_element(By.XPATH, f'//*[@id="main-content-row"]/div/div/div[1]/ul/li[{i}]')
+        li_element.click()
 
-# Print the results in the terminal
-for idx, result in enumerate(results, start=1):
-    print(f"Result {idx}:")
-    print(f"Title: {result['title']}")
-    print(f"Author: {result['author']}")
-    print(f"Price: {result['price']}")
-    print(f"Image URL: {result['image']}")
-    print(f"Link: {result['link']}")
-    print()  
+        # Wait for elements on redirected page
+        try:
+            # Wait for the elements you want to scrape to be present on the redirected page
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]')))
+        except TimeoutException:
+            # If the elements are not found, handle the case here
+            print("Elements not found on redirected page")
+            continue
 
+        # Scrape the desired elements from the redirected page
+        brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[2]/a/span').text
+        price = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[1]/span').text
+        released = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[1]/strong').text
+        os = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[2]/strong').text
+        display = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[3]/strong').text
+        camera = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[4]/strong').text
+        ram = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[5]/strong').text
+        battery = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[6]/strong').text
+
+        # Append the scraped data to the list
+        data.append({
+            'Brand': brand,
+            'Price': price,
+            'Released': released,
+            'OS': os,
+            'Display': display,
+            'Camera': camera,
+            'RAM': ram,
+            'Battery': battery
+        })
+
+        # Go back to the previous page
+        driver.back()
+
+    return data
+
+# Create an empty list to store all data
+all_data = []
+
+# Iterate over multiple pages
+for page_num in range(1, ): 
+    print(f"Scraping data from page {page_num}")
+
+    # Scrape data from the current page and append it to the list
+    all_data.extend(scrape_data())
+
+    # Click on the next page button
+    next_page_button = driver.find_element(By.XPATH, f'//*[@id="main-content-row"]/div/div/div[1]/div[4]/a[{page_num}]')
+    next_page_button.click()
+
+# Create a DataFrame from the list of dictionaries
+df = pd.DataFrame(all_data)
+
+# Save the DataFrame to an Excel file
+df.to_excel('mobile_data.xlsx', index=False)
+
+# Close the WebDriver
+driver.quit()
