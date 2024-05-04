@@ -88,7 +88,7 @@ base_url = "https://www.mobiledokan.co/category/mobiles/smartphones/page/{}/"
 all_data = []
 
 # Iterate over multiple pages
-for page_num in range(6,11): 
+for page_num in range(11,16): 
     print(f"Scraping data from page {page_num}")
     url = base_url.format(page_num)
 
@@ -103,4 +103,4 @@ driver.quit()
 df = pd.DataFrame(all_data)
 
 # Save DataFrame to Excel file
-df.to_excel('mobile_data01.xlsx', index=False)
+df.to_excel('mobile_data02.xlsx', index=False)
