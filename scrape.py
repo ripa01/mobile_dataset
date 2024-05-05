@@ -12,14 +12,14 @@ options = Options()
 # Set the Brave browser executable path
 brave_path = '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
 options = Options()
+options.add_argument("--headless")
 options.binary_location = brave_path
 
 
 # Initialize the Chrome WebDriver with specified options
 driver = webdriver.Chrome(options=options)
 
-
-       
+      
 def scrape_data(url):
     # Send a request to the search page 
     driver.get(url)
@@ -30,6 +30,7 @@ def scrape_data(url):
     except TimeoutException:
     # If no search results found, handle the case here
         driver.quit()
+
     result_elements = driver.find_elements(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/ul/li')
     total_li = len(result_elements)
     print(total_li)
@@ -54,7 +55,10 @@ def scrape_data(url):
         try:
             brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[2]/a/span').text
         except:
-            brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[3]/a/span').text #//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[3]
+            try:
+                brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[3]/a/span').text 
+            except:
+                brand = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[4]/a/span').text 
         price_element = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/div[1]/span[1]/span')
         price = price_element.text if price_element.text else price_element.get_attribute("innerText")
         released = driver.find_element(By.XPATH, '//*[@id="main-content-row"]/div/div/div[1]/div[1]/div[1]/div[2]/ul/li[1]/strong').text
@@ -88,19 +92,18 @@ base_url = "https://www.mobiledokan.co/category/mobiles/smartphones/page/{}/"
 all_data = []
 
 # Iterate over multiple pages
-for page_num in range(11,16): 
+for page_num in range(1,230): 
     print(f"Scraping data from page {page_num}")
     url = base_url.format(page_num)
 
     # Scrape data from the current page and append it to the list
     all_data.extend(scrape_data(url))
+    # Create DataFrame from collected data
+    df = pd.DataFrame(all_data)
+
+    # Save DataFrame to Excel file after scraping each page
+    df.to_excel(f'mobile_data_page_{page_num}.xlsx', index=False)
     
 
 # Close the WebDriver
 driver.quit()
-
-# Create DataFrame from all_data
-df = pd.DataFrame(all_data)
-
-# Save DataFrame to Excel file
-df.to_excel('mobile_data02.xlsx', index=False)
